@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riddle Master</title>
+    <style>
+                :root {
+            --primary: #3a86ff;
+            --secondary: #ff006e;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --success: #4caf50;
+            --warning: #ff9100;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: #f0f5ff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .riddle-container {
+            margin-bottom: 2rem;
+        }
+        
+        .riddle-text {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background-color: rgba(58, 134, 255, 0.1);
+            border-radius: 0.7rem;
+            border-left: 5px solid var(--primary);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 0.5rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: #2a6fd3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-next {
+            background-color: var(--dark);
+            display: none;
+        }
+        
+        .btn-next:hover {
+            background-color: #1a1b25;
+        }
+        
+        .btn-hint {
+            background-color: var(--warning);
+            margin-left: 0.5rem;
+            display: none;
+        }
+        
+        .btn-hint:hover {
+            background-color: #e68200;
+        }
+
+        .btn-skip {
+            background-color: #6c757d;
+            margin-left: 0.5rem;
+        }
+        
+        .btn-skip:hover {
+            background-color: #5a6268;
+        }
+        
+        .feedback-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 0.7rem;
+            display: none;
+        }
+        
+        .feedback-container.success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 5px solid var(--success);
+        }
+        
+        .feedback-container.error {
+            background-color: rgba(255, 145, 0, 0.1);
+            border-left: 5px solid var(--warning);
+        }
+        
+        .feedback-container h3 {
+            margin-bottom: 0.7rem;
+            color: var(--dark);
+        }
+        
+        .hint-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+        
+        .answer-text {
+            font-weight: bold;
+        }
+        
+        .stats {
+            display: flex;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: rgba(43, 45, 66, 0.05);
+            border-radius: 0.5rem;
+            justify-content: space-around;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .celebration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0.8;
+            animation: fall 3s linear forwards;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Riddle Master</h1>
+            <div class="subtitle">Test your wit with challenging riddles!</div>
+        </header>
+        <div class="content">
+            <div class="riddle-container">
+                <div class="riddle-text" id="riddle-text">Loading riddle...</div>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="answer-input" placeholder="Your answer...">
+                </div>
+                <div>
+                    <button class="btn" id="submit-btn">Submit Answer</button>
+                    <button class="btn btn-hint" id="hint-btn">Get Hint</button>
+                    <button class="btn btn-skip" id="skip-btn">Skip Riddle</button>
+                    <button class="btn btn-next" id="next-btn">Next Riddle</button>
+                </div>
+            </div>
+            
+            <div class="feedback-container" id="feedback-container">
+                <h3 id="feedback-title">Feedback</h3>
+                <p id="feedback-message"></p>
+                <p class="hint-text" id="hint-text"></p>
+                <p class="answer-text" id="answer-text"></p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="solved-count">0</div>
+                    <div class="stat-label">Solved</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="attempted-count">0</div>
+                    <div class="stat-label">Attempted</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="skipped-count">0</div>
+                    <div class="stat-label">Skipped</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="celebration" id="celebration"></div>
+    
+    <script>
+        const riddles = [
+        {
+                riddle: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+                hint: "Think about things that make sounds but aren't alive.",
+                answer: "echo"
+            },
+            {
+                riddle: "The more you take, the more you leave behind. What am I?",
+                hint: "Think about what you do when you walk somewhere.",
+                answer: "footsteps"
+            },
+            {
+                riddle: "What has a head, a tail, is brown, and has no legs?",
+                hint: "It's a small currency object.",
+                answer: "penny"
+            },
+            {
+                riddle: "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?",
+                hint: "You use me to navigate or find locations.",
+                answer: "map"
+            },
+            {
+                riddle: "What has keys but no locks, space but no room, and you can enter but not go in?",
+                hint: "You use it to type words and messages.",
+                answer: "keyboard"
+            },
+            {
+                riddle: "What can travel around the world while staying in a corner?",
+                hint: "Think about items you might find on an envelope.",
+                answer: "stamp"
+            },
+            {
+                riddle: "I'm light as a feather, but the strongest person can't hold me for more than a few minutes. What am I?",
+                hint: "You do this constantly, but trying not to do it is very difficult.",
+                answer: "breath"
+            },
+            {
+                riddle: "What has a neck but no head?",
+                hint: "Think about items of clothing or bottles.",
+                answer: "bottle"
+            },
+            {
+                riddle: "What gets wetter as it dries?",
+                hint: "You use it after bathing or swimming.",
+                answer: "towel"
+            },
+            {
+                riddle: "The person who makes it, sells it. The person who buys it, never uses it. The person who uses it, never sees it. What is it?",
+                hint: "Think about something used after death.",
+                answer: "coffin"
+            },
+            {
+                riddle: "What has many keys but can't open a single lock?",
+                hint: "It makes beautiful sounds when played.",
+                answer: "piano"
+            },
+            {
+                riddle: "What starts with 'e', ends with 'e', and contains one letter?",
+                hint: "It's used to mail things.",
+                answer: "envelope"
+            },
+            {
+                riddle: "Forward I'm heavy, but backward I'm not. What am I?",
+                hint: "Think about the word 'ton' spelled forward and backward.",
+                answer: "ton"
+            },
+            {
+                riddle: "What has legs but doesn't walk?",
+                hint: "You might sit at it or put things on it.",
+                answer: "table"
+            },
+            {
+                riddle: "I have branches, but no fruit, trunk, or leaves. What am I?",
+                hint: "Think about where you might keep your money.",
+                answer: "bank"
+            },
+            {
+                riddle: "What building has the most stories?",
+                hint: "You go there to find books.",
+                answer: "library"
+            },
+            {
+                riddle: "What can you catch but not throw?",
+                hint: "It's something that makes you feel unwell.",
+                answer: "cold"
+            },
+            {
+                riddle: "What has 13 hearts but no other organs?",
+                hint: "Think about games you might play with friends.",
+                answer: "deck of cards"
+            },
+            {
+                riddle: "What has words but never speaks?",
+                hint: "You read it to gain knowledge or for enjoyment.",
+                answer: "book"
+            },
+            {
+                riddle: "What can run but never walks, has a mouth but never talks, has a head but never weeps, has a bed but never sleeps?",
+                hint: "It's a natural flowing body of water.",
+                answer: "river"
+            },
+            {
+                riddle: "The more you take, the more you leave behind. What am I?",
+                hint: "It's related to walking.",
+                answer: "footsteps"
+            },
+            {
+                riddle: "What has a face and two hands but no arms or legs?",
+                hint: "You use it to tell the time.",
+                answer: "clock"
+            },
+            {
+                riddle: "I'm tall when I'm young, and I'm short when I'm old. What am I?",
+                hint: "Think about something that burns.",
+                answer: "candle"
+            },
+            {
+                riddle: "What is always in front of you but can't be seen?",
+                hint: "It's related to time.",
+                answer: "future"
+            },
+            {
+                riddle: "What gets broken without being held?",
+                hint: "It's something you give to someone.",
+                answer: "promise"
+            },
+            {
+                riddle: "What can fill a room but takes up no space?",
+                hint: "You can't see it, but it illuminates everything.",
+                answer: "light"
+            },
+            {
+                riddle: "What goes up but never comes down?",
+                hint: "Think about something that increases as you get older.",
+                answer: "age"
+            },
+            {
+                riddle: "I'm full of holes but still holds water. What am I?",
+                hint: "You use it in the kitchen or bathroom.",
+                answer: "sponge"
+            },
+            {
+                riddle: "What has many teeth but can't bite?",
+                hint: "You use it to style your hair.",
+                answer: "comb"
+            },
+            {
+                riddle: "What has one eye but can't see?",
+                hint: "You use it to sew things.",
+                answer: "needle"
+            },
+            {
+                riddle: "What has a bottom at the top?",
+                hint: "You wear it on your legs.",
+                answer: "legs"
+            },
+            {
+                riddle: "What comes once in a minute, twice in a moment, but never in a thousand years?",
+                hint: "Look at the spelling of the words in the riddle.",
+                answer: "m"
+            },
+            {
+                riddle: "I'm not alive, but I grow; I don't have lungs, but I need air; I don't have a mouth, but water kills me. What am I?",
+                hint: "It produces heat and light.",
+                answer: "fire"
+            },
+            {
+                riddle: "The more you take, the more you leave behind. What am I?",
+                hint: "Think about walking.",
+                answer: "footsteps"
+            },
+            {
+                riddle: "What has keys but no locks, space but no room, and you can enter but not go in?",
+                hint: "You type on it.",
+                answer: "keyboard"
+            },
+            {
+                riddle: "What breaks yet never falls, and what falls yet never breaks?",
+                hint: "Think about time of day and water.",
+                answer: "day and night"
+            },
+            {
+                riddle: "What is so fragile that saying its name breaks it?",
+                hint: "It's a peaceful state.",
+                answer: "silence"
+            },
+            {
+                riddle: "What is always in front of you but can't be seen?",
+                hint: "It's related to time.",
+                answer: "future"
+            },
+            {
+                riddle: "The more of this there is, the less you see. What is it?",
+                hint: "It comes out at night.",
+                answer: "darkness"
+            },
+            {
+                riddle: "I'm light as a feather, yet the strongest person can't hold me for more than a few minutes. What am I?",
+                hint: "You do it constantly without thinking.",
+                answer: "breath"
+            },
+            {
+                riddle: "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?",
+                hint: "You use it to find locations.",
+                answer: "map"
+            },
+            {
+                riddle: "What is full of holes but still holds water?",
+                hint: "You use it to clean dishes or your body.",
+                answer: "sponge"
+            },
+            {
+                riddle: "What belongs to you, but others use it more than you do?",
+                hint: "People call you by it.",
+                answer: "name"
+            },
+            {
+                riddle: "What can you hold in your right hand, but not in your left?",
+                hint: "Think about your body parts.",
+                answer: "left hand"
+            },
+            {
+                riddle: "What gets wet while drying?",
+                hint: "You use it after a shower.",
+                answer: "towel"
+            },
+            {
+                riddle: "What has a head and a tail but no body?",
+                hint: "You flip it to make decisions.",
+                answer: "coin"
+            },
+            {
+                riddle: "What is cut on a table, but is never eaten?",
+                hint: "You play games with it.",
+                answer: "deck of cards"
+            },
+            {
+                riddle: "What has words, but never speaks?",
+                hint: "You read it.",
+                answer: "book"
+            },
+            {
+                riddle: "I have branches, but no fruit, trunk, or leaves. What am I?",
+                hint: "You store money there.",
+                answer: "bank"
+            },
+            {
+                riddle: "What runs all around a backyard, yet never moves?",
+                hint: "It keeps things in or out.",
+                answer: "fence"
+            },
+            {
+                riddle: "What can travel all around the world without leaving its corner?",
+                hint: "You use it to mail letters.",
+                answer: "stamp"
+            },
+            {
+                riddle: "What has 13 hearts, but no other organs?",
+                hint: "You can play games with it.",
+                answer: "deck of cards"
+            },
+            {
+                riddle: "What has a neck but no head?",
+                hint: "You drink from it.",
+                answer: "bottle"
+            },
+            {
+                riddle: "What invention lets you look right through a wall?",
+                hint: "It lets light and air in.",
+                answer: "window"
+            },
+            {
+                riddle: "What goes up and down but doesn't move?",
+                hint: "You use it to go between floors.",
+                answer: "stairs"
+            },
+            {
+                riddle: "If you drop me, I'm sure to crack, but give me a smile and I'll always smile back. What am I?",
+                hint: "You see yourself in it.",
+                answer: "mirror"
+            },
+            {
+                riddle: "What has many keys but can't open a single lock?",
+                hint: "It makes music.",
+                answer: "piano"
+            },
+            {
+                riddle: "What has legs, but doesn't walk?",
+                hint: "You sit at it.",
+                answer: "table"
+            },
+            {
+                riddle: "What has a bottom at the top?",
+                hint: "You wear it on your legs.",
+                answer: "legs"
+            },
+            {
+                riddle: "What building has the most stories?",
+                hint: "You borrow books from it.",
+                answer: "library"
+            },
+            {
+                riddle: "What is full of holes but still holds water?",
+                hint: "You use it to clean dishes.",
+                answer: "sponge"
+            },
+            {
+                riddle: "What can be broken but is never held?",
+                hint: "It's something you give someone.",
+                answer: "promise"
+            },
+            {
+                riddle: "What is at the end of a rainbow?",
+                hint: "Think about the spelling of the word 'rainbow'.",
+                answer: "w"
+            },
+            {
+                riddle: "What is black when you buy it, red when you use it, and gray when you throw it away?",
+                hint: "You use it in a fireplace.",
+                answer: "charcoal"
+            },
+            {
+                riddle: "What can you catch but not throw?",
+                hint: "It makes you feel sick.",
+                answer: "cold"
+            },
+            {
+                riddle: "I can fly without wings. I can cry without eyes. Wherever I go, darkness follows me. What am I?",
+                hint: "I appear in the sky.",
+                answer: "cloud"
+            },
+            {
+                riddle: "I have branches, but no fruit, trunk, or leaves. What am I?",
+                hint: "It's related to money.",
+                answer: "bank"
+            },
+            {
+                riddle: "What occurs once in a minute, twice in a moment, but never in a thousand years?",
+                hint: "Look at the spelling of the words.",
+                answer: "m"
+            },
+            {
+                riddle: "A man who was outside in the rain without an umbrella or hat didn't get a single hair on his head wet. Why?",
+                hint: "Think about his physical appearance.",
+                answer: "bald"
+            },
+            {
+                riddle: "What is always coming but never arrives?",
+                hint: "It's related to time.",
+                answer: "tomorrow"
+            },
+            {
+                riddle: "What starts with an 'e' and ends with an 'e' but typically contains only one letter?",
+                hint: "You use it to mail letters.",
+                answer: "envelope"
+            },
+            {
+                riddle: "What has a head and a tail but no body?",
+                hint: "You flip it to make decisions.",
+                answer: "coin"
+            },
+            {
+                riddle: "I am taken from a mine, and shut up in a wooden case, from which I am never released, and yet I am used by almost every person. What am I?",
+                hint: "You use it to write.",
+                answer: "pencil lead"
+            },
+            {
+                riddle: "What goes up but never comes down?",
+                hint: "It increases every year.",
+                answer: "age"
+            },
+            {
+                riddle: "I'm tall when I'm young, and I'm short when I'm old. What am I?",
+                hint: "It provides light.",
+                answer: "candle"
+            },
+            {
+                riddle: "What is so delicate that saying its name breaks it?",
+                hint: "It's a peaceful state.",
+                answer: "silence"
+            },
+            {
+                riddle: "What question can you never answer 'yes' to?",
+                hint: "Think about your state of consciousness.",
+                answer: "are you asleep"
+            },
+            {
+                riddle: "What has hands but cannot clap?",
+                hint: "It tells you the time.",
+                answer: "clock"
+            },
+            {
+                riddle: "What can run but never walks, has a mouth but never talks, has a head but never weeps, has a bed but never sleeps?",
+                hint: "It flows through nature.",
+                answer: "river"
+            },
+            {
+                riddle: "The more you take, the more you leave behind. What am I?",
+                hint: "They mark where you've been.",
+                answer: "footsteps"
+            }
+        ]
+
+        // DOM elements
+        const riddleText = document.getElementById('riddle-text');
+        const answerInput = document.getElementById('answer-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const skipBtn = document.getElementById('skip-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const hintText = document.getElementById('hint-text');
+        const answerText = document.getElementById('answer-text');
+        const solvedCount = document.getElementById('solved-count');
+        const attemptedCount = document.getElementById('attempted-count');
+        const skippedCount = document.getElementById('skipped-count');
+        const celebration = document.getElementById('celebration');
+
+        // Game state variables
+        let currentRiddle;
+        let usedRiddles = [];
+        let hintUsed = false;
+        let attemptsUsed = 0;
+        let gameState = 'playing'; // 'playing' or 'solved'
+        let stats = {
+            solved: 0,
+            attempted: 0,
+            skipped: 0
+        };
+
+        // Fisher-Yates shuffle algorithm to randomize riddles
+        function shuffleArray(array) {
+            const shuffledArray = [...array];
+            for (let i = shuffledArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+            }
+            return shuffledArray;
+        }
+
+        // Initialize the game
+        function initGame() {
+            // Shuffle riddles array for random order
+            usedRiddles = shuffleArray([...riddles]);
+            loadNewRiddle();
+            updateStats();
+        }
+
+        // Load a new riddle
+        function loadNewRiddle() {
+            // If all riddles have been used, reset the pool
+            if (usedRiddles.length === 0) {
+                usedRiddles = shuffleArray([...riddles]);
+            }
+
+            // Select and remove the first riddle from the pool
+            currentRiddle = usedRiddles.shift();
+            
+            // Reset state
+            hintUsed = false;
+            attemptsUsed = 0;
+            gameState = 'playing';
+            
+            // Update UI
+            riddleText.textContent = currentRiddle.riddle;
+            answerInput.value = '';
+            feedbackContainer.style.display = 'none';
+            hintBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'inline-block';
+            
+            // Focus on the answer input
+            answerInput.focus();
+        }
+
+        // Check the user's answer
+        function checkAnswer() {
+            // Prevent multiple submissions if already solved
+            if (gameState === 'solved') return;
+
+            stats.attempted++;
+            attemptsUsed++;
+            updateStats();
+            
+            const userAnswer = answerInput.value.trim().toLowerCase();
+            const correctAnswer = currentRiddle.answer.toLowerCase();
+            
+            if (userAnswer === correctAnswer) {
+                // Correct answer
+                showSuccess();
+            } else if (attemptsUsed === 1) {
+                // First wrong attempt, show hint
+                showHint();
+            } else {
+                // Second wrong attempt, show answer
+                showAnswer();
+            }
+        }
+
+        // Show success feedback
+        function showSuccess() {
+            // Prevent multiple successful submissions
+            if (gameState === 'solved') return;
+            
+            stats.solved++;
+            gameState = 'solved';
+            updateStats();
+            
+            feedbackContainer.className = 'feedback-container success';
+            feedbackTitle.textContent = 'Correct!';
+            
+            // Generate a random success message
+            const successMessages = [
+                "Brilliant! You solved it!",
+                "Excellent job! Your wit is impressive!",
+                "Outstanding! Your intellect shines through!",
+                "Amazing! You've got a knack for riddles!",
+                "Fantastic! Your cleverness is remarkable!",
+                "Incredible! You figured it out!"
+            ];
+            
+            feedbackMessage.textContent = successMessages[Math.floor(Math.random() * successMessages.length)];
+            
+            hintText.textContent = '';
+            answerText.textContent = '';
+            
+            feedbackContainer.style.display = 'block';
+            submitBtn.style.display = 'none';
+            hintBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+            
+            // Show celebration effect
+            showCelebration();
+        }
+
+        // Show hint
+        function showHint() {
+            hintUsed = true;
+            
+            feedbackContainer.className = 'feedback-container error';
+            feedbackTitle.textContent = 'Not quite right!';
+            feedbackMessage.textContent = 'Try again with this hint:';
+            hintText.textContent = currentRiddle.hint;
+            answerText.textContent = '';
+            
+            feedbackContainer.style.display = 'block';
+            hintBtn.style.display = 'none';
+        }
+
+        // Show answer after incorrect attempts
+        function showAnswer() {
+            feedbackContainer.className = 'feedback-container error';
+            feedbackTitle.textContent = 'Nice try!';
+            feedbackMessage.textContent = "That's not it. Here's the answer:";
+            hintText.textContent = '';
+            answerText.textContent = `The answer is: ${currentRiddle.answer}`;
+            
+            feedbackContainer.style.display = 'block';
+            submitBtn.style.display = 'none';
+            hintBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+        }
+
+        // Skip current riddle
+        function skipRiddle() {
+            stats.skipped++;
+            updateStats();
+            
+            feedbackContainer.className = 'feedback-container error';
+            feedbackTitle.textContent = 'Riddle Skipped';
+            feedbackMessage.textContent = "Here's the answer to this one:";
+            hintText.textContent = '';
+            answerText.textContent = `The answer is: ${currentRiddle.answer}`;
+            
+            feedbackContainer.style.display = 'block';
+            submitBtn.style.display = 'none';
+            hintBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+            
+            gameState = 'solved';
+        }
+
+        // Update statistics display
+        function updateStats() {
+            solvedCount.textContent = stats.solved;
+            attemptedCount.textContent = stats.attempted;
+            skippedCount.textContent = stats.skipped;
+        }
+
+        // (Celebration function remains the same)
+
+        // Event listeners
+        submitBtn.addEventListener('click', checkAnswer);
+        
+        answerInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent form submission
+                
+                if (gameState === 'solved') {
+                    // If riddle is solved, go to next riddle
+                    loadNewRiddle();
+                } else {
+                    // If riddle is not solved, check answer
+                    checkAnswer();
+                }
+            }
+        });
+        
+        hintBtn.addEventListener('click', function() {
+            hintText.textContent = currentRiddle.hint;
+            feedbackContainer.style.display = 'block';
+            hintBtn.style.display = 'none';
+        });
+        
+        skipBtn.addEventListener('click', skipRiddle);
+        
+        nextBtn.addEventListener('click', loadNewRiddle);
+
+        // Initialize the game when the page loads
+        initGame();
+    </script>
+</body>
+</html>
